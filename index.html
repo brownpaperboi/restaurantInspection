@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NYC Restaurant Inspection Map</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <h1>NYC Restaurant Inspection Map</h1>
+  <div id="filters">
+    <input type="text" id="searchName" placeholder="Restaurant name" />
+    <select id="cuisineFilter"><option value="">All cuisines</option></select>
+    <select id="boroughFilter">
+      <option value="">All boroughs</option>
+      <option value="MANHATTAN">Manhattan</option>
+      <option value="BROOKLYN">Brooklyn</option>
+      <option value="QUEENS">Queens</option>
+      <option value="BRONX">Bronx</option>
+      <option value="STATEN ISLAND">Staten Island</option>
+    </select>
+    <select id="gradeFilter">
+      <option value="">All grades</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+    </select>
+    <button onclick="applyFilters()">Filter</button>
+  </div>
+  
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
