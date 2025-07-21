@@ -1,26 +1,31 @@
+// script.js
 let map = L.map('map').setView([40.7128, -74.0060], 12);
 let markers = [];
 let restaurantData = [];
 let activeRestaurant = null;
 
+// add base layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Fetch and render data
+// remove all markers from map
+function clearMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+}
+
+// fetch & prepare, but do NOT auto-render
 fetch('restaurants.json')
   .then(res => res.json())
   .then(data => {
     restaurantData = data;
     populateCuisineOptions(data);
-    renderMarkers(data);
+    // <-- no renderMarkers(data) here
   });
 
-// Render markers (no zoom-fit)
+// plot a batch of markers
 function renderMarkers(data) {
-  markers.forEach(marker => map.removeLayer(marker));
-  markers = [];
-
   data.forEach(r => {
     const marker = L.marker([r.latitude, r.longitude])
       .addTo(map)
@@ -34,100 +39,63 @@ function renderMarkers(data) {
   });
 }
 
-function setActiveRestaurant(r) {
-  activeRestaurant = r;
-
-  document.getElementById('restaurantDetails').innerHTML = `
-    <strong>${r.dba}</strong><br>
-    Cuisine: ${r.cuisine_description}<br>
-    Grade: ${r.grade || 'Not graded'}<br>
-    Date: ${r.inspection_date}<br>
-    Borough: ${r.borough}<br>
-    Violation: ${r.violation_description || 'None'}
-  `;
-
-  document.getElementById('saveBtn').disabled = false;
-}
-
-// Save from info panel
-document.getElementById('saveBtn').addEventListener('click', () => {
-  if (!activeRestaurant) return;
-  saveRestaurant(activeRestaurant);
-});
-
-// Filter logic
-function applyFilters() {
-  const name = document.getElementById('searchName').value.toLowerCase();
-  const cuisine = document.getElementById('cuisineFilter').value;
-  const borough = document.getElementById('boroughFilter').value.toUpperCase();
-  const grade = document.getElementById('gradeFilter').value;
-
-  const filtered = restaurantData.filter(r => {
-    const rBorough = (r.borough || "").toUpperCase();
-    return (
-      (!name || r.dba.toLowerCase().includes(name)) &&
-      (!cuisine || r.cuisine_description === cuisine) &&
-      (!borough || rBorough === borough) &&
-      (!grade || r.grade === grade)
-    );
-  });
-
-  renderMarkers(filtered);
-}
-
-// Populate cuisine dropdown
+// fill cuisine dropdown
 function populateCuisineOptions(data) {
-  const cuisineSet = new Set(data.map(r => r.cuisine_description).filter(Boolean));
-  const cuisineFilter = document.getElementById('cuisineFilter');
-  [...cuisineSet].sort().forEach(cuisine => {
-    const opt = document.createElement('option');
-    opt.value = cuisine;
-    opt.textContent = cuisine;
-    cuisineFilter.appendChild(opt);
-  });
+  const select = document.getElementById('cuisineFilter');
+  select.innerHTML = '<option value="">🍽️ Filter by cuisine</option>';
+  [...new Set(data.map(r => r.cuisine_description))]
+    .sort()
+    .forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      select.appendChild(opt);
+    });
 }
 
-// Save logic
-function saveRestaurant(r) {
-  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-  const exists = favorites.some(f => f.dba === r.dba && f.latitude === r.latitude);
-  if (!exists) {
-    favorites.push(r);
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    alert(`Saved "${r.dba}"`);
-    updateSavedList();
+// when user clicks "Apply Filters"
+function applyFilters() {
+  const name    = document.getElementById('searchName').value.toLowerCase();
+  const cuisine = document.getElementById('cuisineFilter').value;
+  const borough = document.getElementById('boroughFilter').value;
+  const grade   = document.getElementById('gradeFilter').value;
+
+  clearMarkers();
+
+  const filtered = restaurantData.filter(r =>
+    (!name    || r.dba.toLowerCase().includes(name)) &&
+    (!cuisine || r.cuisine_description === cuisine)     &&
+    (!borough || r.borough === borough)                 &&
+    (!grade   || r.grade === grade)
+  );
+
+  if (filtered.length) {
+    renderMarkers(filtered);
+    // zoom to fit
+    const group = L.featureGroup(markers);
+    map.fitBounds(group.getBounds(), { maxZoom: 14 });
   } else {
-    alert("Already saved.");
+    // you could display a "no results" message here
   }
 }
 
-// Show saved restaurants on map
-function showSaved() {
-  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-  if (favorites.length === 0) {
-    alert("No saved restaurants yet!");
-    return;
-  }
-  renderMarkers(favorites);
+// clear filters & map
+function resetFilters() {
+  clearMarkers();
+  document.getElementById('searchName').value    = '';
+  document.getElementById('cuisineFilter').value = '';
+  document.getElementById('boroughFilter').value = '';
+  document.getElementById('gradeFilter').value   = '';
+  populateCuisineOptions(restaurantData);
 }
 
-// Clear saved list
-function clearSaved() {
-  localStorage.removeItem('favorites');
-  updateSavedList();
-  alert("Favorites cleared.");
-}
+// below here keep your existing save/showSaved/clearSaved/setActiveRestaurant code,
+// unchanged from what you already have (it will continue to work exactly as before).
 
-// Display saved list
-function updateSavedList() {
-  const list = document.getElementById('savedList');
-  list.innerHTML = '';
-  const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-  favorites.forEach(r => {
-    const li = document.createElement('li');
-    li.textContent = `${r.dba} (${r.cuisine_description})`;
-    list.appendChild(li);
-  });
-}
-
-updateSavedList();
+// e.g.:
+//
+// function setActiveRestaurant(r) { … }
+// function showSaved() { … }
+// function clearSaved() { … }
+// function updateSavedList() { … }
+// updateSavedList();
