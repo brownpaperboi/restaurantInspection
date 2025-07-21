@@ -2,17 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NYC Restaurant Inspection Map</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Restaurant Map</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f8f9fa;
+      color: #333;
+    }
+
+    header {
+      padding: 1rem 2rem;
+      background: #1976d2;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    #filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    #filters input, #filters select, #filters button {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    #filters button {
+      background: #1976d2;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    #filters button:hover {
+      background: #1257a6;
+    }
+
+    #map {
+      height: 65vh;
+    }
+
+    .info-panel, #saved-container {
+      padding: 1rem;
+      background: #fff;
+      border-top: 1px solid #eee;
+    }
+
+    .info-panel h3, #saved-container h3 {
+      margin-top: 0;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .badge-A { background: #4caf50; }
+    .badge-B { background: #ff9800; }
+    .badge-C { background: #f44336; }
+    .badge-na { background: #999; }
+
+    ul#savedList {
+      list-style: none;
+      padding-left: 1rem;
+    }
+
+    ul#savedList li {
+      margin: 0.3rem 0;
+    }
+
+    @media (max-width: 600px) {
+      #map {
+        height: 50vh;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>NYC Restaurant Inspection Map</h1>
+  <header>NYC Restaurant Inspection Map</header>
+
   <div id="filters">
-    <input type="text" id="searchName" placeholder="Restaurant name" />
-    <select id="cuisineFilter"><option value="">All cuisines</option></select>
+    <input id="searchName" placeholder="🔍 Search by name" />
+    <select id="cuisineFilter">
+      <option value="">🍽️ Filter by cuisine</option>
+    </select>
     <select id="boroughFilter">
-      <option value="">All boroughs</option>
+      <option value="">📍 Filter by borough</option>
       <option value="MANHATTAN">Manhattan</option>
       <option value="BROOKLYN">Brooklyn</option>
       <option value="QUEENS">Queens</option>
@@ -20,15 +115,29 @@
       <option value="STATEN ISLAND">Staten Island</option>
     </select>
     <select id="gradeFilter">
-      <option value="">All grades</option>
+      <option value="">🎓 Filter by grade</option>
       <option value="A">A</option>
       <option value="B">B</option>
       <option value="C">C</option>
     </select>
-    <button onclick="applyFilters()">Filter</button>
+    <button onclick="applyFilters()">Apply Filters</button>
+    <button onclick="resetFilters()">Clear Filters</button>
+    <button onclick="showSaved()">Show Saved</button>
+    <button onclick="clearSaved()">Clear Saved</button>
   </div>
-  
+
   <div id="map"></div>
+
+  <div id="restaurantInfo" class="info-panel">
+    <h3>📍 Selected Restaurant</h3>
+    <div id="restaurantDetails">Click a marker to see details here.</div>
+    <button id="saveBtn" disabled>⭐ Save This Restaurant</button>
+  </div>
+
+  <div id="saved-container">
+    <h3>📌 Saved Restaurants:</h3>
+    <ul id="savedList"></ul>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="script.js"></script>
